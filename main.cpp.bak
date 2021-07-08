@@ -68,7 +68,7 @@ struct TAMA
 
 	int DivTate;					//分割数[縦]
 	int DivYoko;					//分割数[横]
-	int DivMAX;						//分割総数
+	int DivMax;						//分割総数
 
 	int AnimeCnt = 0;				//アニメーションカウンタ
 	int AnimeCntMax = 0;			//アニメーションカウンタMAX
@@ -278,7 +278,7 @@ int WINAPI WinMain(
 /// <returns>読み込めたらTRUE / 読み込めなかったらFALSE</returns>
 BOOL GameLoad(VOID)
 {
-	//弾の分割数を設定
+	//
 	tama_moto.DivYoko = 4;
 	tama_moto.DivTate = 1;
 
@@ -287,20 +287,20 @@ BOOL GameLoad(VOID)
 
 
 
-	//画像を分割して読み込み
+	//
 	if (LoadImageDivMem(&tama_moto.handle[0], tama_moto.path, tama_moto.DivYoko, tama_moto.DivTate) == FALSE) { return FALSE; }
 
-	//幅と高さを取得
+	//
 	GetGraphSize(tama_moto.handle[0], &tama_moto.width, &tama_moto.height);
 
 	//位置を設定
-	tama_moto.x = GAME_WIDTH / 2 - tama_moto.width / 2;		//中央ぞろえ
-	tama_moto.y = GAME_HEIGHT - tama_moto.height;			//画面下
+	tama_moto.x = GAME_WIDTH / 2 - tama_moto.width / 2;
+	tama_moto.y = GAME_HEIGHT - tama_moto.height;
 
-	//速度
+	//
 	tama_moto.Speed = 1;
 
-	//アニメを変える速度
+	//
 	tama_moto.AnimeCntMax = 10;
 
 	//当たり判定を更新
@@ -527,7 +527,7 @@ VOID DrawTama(TAMA* tama)
 	{
 
 		//弾の描画
-		DrawGraph(tama->x, tama->y, tama->handle[tama->NowIndex], TRUE);
+		DrawGraph(0, 0, tama->handle[tama->NowIndex], TRUE);
 
 		if (tama->AnimeCnt < tama->AnimeCntMax)
 		{
@@ -614,8 +614,8 @@ VOID PlayProc(VOID)
 		if (tama[i].IsDraw == TRUE)
 			//tama[i].x
 			tama[i].y -= tama[i].Speed;
-
-		//画面がいに出たら、描画しない
+		
+	//画面がいに出たら、描画しない
 		if (tama[i].y + tama[i].height < 0 ||
 			tama[i].y > GAME_HEIGHT ||
 			tama[i].x + tama[i].width < 0 ||
@@ -804,6 +804,7 @@ VOID CollUpdatePlayer(CHARACTOR* chara)
 	return;
 }
 
+
 /// <summary>
 /// 当たり判定の領域更新
 /// </summary>
@@ -818,6 +819,12 @@ VOID CollUpdate(CHARACTOR* chara)
 
 	return;
 }
+
+
+/// <summary>
+/// 当たり判定の領域更新
+/// </summary>
+/// <param name="chara">当たり判定の領域</param>
 VOID CollUpdateTama(TAMA* tama)
 {
 	tama->coll.left = tama->x;
