@@ -3,9 +3,11 @@
 #include "keyboard.h"	//キーボードの処理
 #include "FPS.h"		//FPSの処理
 
+#include<math.h>		//数学
+
 //マクロ定義
 #define TAMA_DIV_MAX	4		//弾の画像の最大値
-#define TAMA_MAX		10		//弾の総数
+#define TAMA_MAX		30		//弾の総数
 
 
 
@@ -75,6 +77,13 @@ struct TAMA
 
 	int NowIndex = 0;				//現在の画像の要素数
 
+	int StartX;						//x初期位置
+	int StartY;						//y初期位置
+
+	int radius;						//半径
+	int degree;						//角度
+
+
 	int x;							//X位置
 	int y; 							//Y位置
 	int width;						//幅
@@ -121,6 +130,10 @@ struct TAMA tama[TAMA_MAX];
 int tamaShotCnt = 0;
 int tamaShotCntMAX = 7;
 
+
+//プレイヤー
+CHARACTOR player;
+
 //プロトタイプ宣言
 VOID Title(VOID);		//タイトル画面
 VOID TitleProc(VOID);	//タイトル画面(処理)
@@ -156,6 +169,9 @@ BOOL LoadImageDivMem(int* handle, const char* path, int bunkatuYoko, int bunkatu
 VOID GameInit(VOID);	//ゲームのデータの初期化
 
 VOID DrawTama(TAMA* tama);		//弾の描画
+
+
+VOID ShotTama(TAMA* tama, float deg);	//弾の発射
 
 // プログラムは WinMain から始まります
 //Windowsのプログラミング方法 = (WinAPI)で動いている！
@@ -314,6 +330,15 @@ BOOL GameLoad(VOID)
 		tama[i] = tama_moto;
 	}
 
+	//プレイヤーの画像を読み込み
+	LoadImageMem(&player.img, ".\\images\\player.png");
+	//中央ぞろえ
+	player.img.x = GAME_WIDTH / 2 - player.img.width; 
+	player.img.y = GAME_HEIGHT / 2 - player.img.height;
+	CollUpdatePlayer(&player);		//当たり判定の更新
+	player.img.IsDraw = TRUE;		//描画する
+
+
 	return TRUE;	//全て読み込めた！
 
 
@@ -458,7 +483,11 @@ BOOL LoadAudio(AUDIO* audio, const char* path, int volume, int playType)
 /// <param name=""></param>
 VOID GameInit(VOID)
 {
-
+	//プレイヤーの初期化
+	player.img.x = GAME_WIDTH / 2 - player.img.width;
+	player.img.y = GAME_HEIGHT / 2 - player.img.height;
+	CollUpdatePlayer(&player);		//当たり判定の更新
+	player.img.IsDraw = TRUE;		//描画する
 }
 
 /// <summary>
@@ -566,6 +595,7 @@ VOID Play(VOID)
 /// </summary>
 VOID PlayProc(VOID)
 {
+	//スペースキーを押したとき
 	if (KeyClick(KEY_INPUT_RETURN) == TRUE)
 	{
 		//プレイ画面に切り替え
@@ -574,29 +604,89 @@ VOID PlayProc(VOID)
 		return;
 	}
 
+	//プレイヤーを操作する
+	if (KeyDown(KEY_INPUT_LEFT) == TRUE)
+	{
+		if (player.img.x - player.speed >= 0)
+		{
+			player.img.x -= player.speed;
+		}
+	}
+
+	//プレイヤーを操作する
+	if (KeyDown(KEY_INPUT_RIGHT) == TRUE)
+	{
+		if (player.img.x + player.speed <= GAME_WIDTH)
+		{
+			player.img.x += player.speed;
+		}
+	}
+
+	//プレイヤーを操作する
+	if (KeyDown(KEY_INPUT_UP) == TRUE)
+	{
+		if (player.img.y - player.speed >= 0)
+		{
+			player.img.y -= player.speed;
+		}
+	}
+
+	//プレイヤーを操作する
+	if (KeyDown(KEY_INPUT_DOWN) == TRUE)
+	{
+		if (player.img.y + player.speed <= GAME_HEIGHT)
+		{
+			player.img.y += player.speed;
+		}
+	}
+	//当たり判定の更新
+	CollUpdatePlayer(&player);
+
 	if (KeyDown(KEY_INPUT_SPACE) == TRUE)
 	{
 
 		if (tamaShotCnt == 0)
-			//
-			for (int i = 0; i < TAMA_MAX; i++)
+
+			
 			{
-				if (tama[i].IsDraw == FALSE)
+				//弾を飛ばす
+				for (int i = 0; i < TAMA_MAX; i++)
 				{
-					//
-					tama[i].IsDraw = TRUE;
+					if (tama[i].IsDraw == FALSE)
+					{
+						ShotTama(&tama[i], 240);
 
-					//弾の位置を決める
-					tama[i].x = GAME_WIDTH / 2 - tama[i].width / 2;
-					tama[i].y = GAME_HEIGHT / 2 - tama[i].height / 2;
+						//弾を1発出したらループを抜ける
+						break;
+					}
 
-					//弾の当たり判定を更新
-					CollUpdateTama(&tama[i]);
+				}
+				//弾を飛ばす
+				for (int i = 0; i < TAMA_MAX; i++)
+				{
+					if (tama[i].IsDraw == FALSE)
+					{
+						ShotTama(&tama[i], 270);
 
-					//弾を1発出したらループを抜ける
-					break;
+						//弾を1発出したらループを抜ける
+						break;
+					}
+
+				}				//弾を飛ばす
+				for (int i = 0; i < TAMA_MAX; i++)
+				{
+					if (tama[i].IsDraw == FALSE)
+					{
+						ShotTama(&tama[i], 300);
+
+						//弾を1発出したらループを抜ける
+						break;
+					}
+
 				}
 			}
+	
+
 	}
 
 	//発射待ち
@@ -613,7 +703,11 @@ VOID PlayProc(VOID)
 	{
 		if (tama[i].IsDraw == TRUE)
 			//tama[i].x
-			tama[i].y -= tama[i].Speed;
+			tama[i].x = tama[i].StartX + cos(tama[i].degree* DX_PI / 180.0f) * tama[i].radius;
+			tama[i].y = tama[i].StartY + sin(tama[i].degree* DX_PI / 180.0f) * tama[i].radius;
+
+			//半径を足す
+			tama[i].radius += tama[i].Speed;
 
 		//画面がいに出たら、描画しない
 		if (tama[i].y + tama[i].height < 0 ||
@@ -621,7 +715,7 @@ VOID PlayProc(VOID)
 			tama[i].x + tama[i].width < 0 ||
 			tama[i].x > GAME_WIDTH)
 		{
-			tama[i].IsDraw = FALSE;
+			tama[i].IsDraw = FALSE; 
 		}
 	}
 
@@ -629,6 +723,35 @@ VOID PlayProc(VOID)
 
 }
 
+/// <summary>
+/// 弾を飛ばす
+/// </summary>
+/// <param name="tama"></param>
+/// <param name="deg"></param>
+VOID ShotTama(TAMA* tama, float deg)
+{
+		//弾を発射する
+		tama->IsDraw = TRUE;
+
+		//弾の位置を決める（弾の中心位置）
+		tama->StartX = player.img.x + player.img.width / 2 - tama->width / 2;
+		tama->StartY = player.img.y;
+
+		//弾の速度
+		tama->Speed = 7;
+
+		//弾の角度
+		tama->degree = deg;
+
+		//弾の半径
+		tama->radius = 0.0f;
+
+		//弾の当たり判定を更新
+		CollUpdateTama(tama);
+
+		
+	
+}
 
 
 /// <summary>
@@ -637,11 +760,35 @@ VOID PlayProc(VOID)
 VOID PlayDraw(VOID)
 {
 
+	//プレイヤーの描画
+	if (player.img.IsDraw == TRUE)
+	{
+		//プレイヤーの描画
+		DrawGraph(player.img.x, player.img.y, player.img.handle, TRUE);
+
+		if (GAME_DEBUG == TRUE)
+		{
+			DrawBox(
+				player.coll.left, player.coll.top, player.coll.right, player.coll.bottom,
+				GetColor(255, 0, 0), FALSE);
+		}
+
+	}
+
+
+	//弾の描画
 	for (int i = 0; i < TAMA_MAX; i++)
 	{
 		if (tama[i].IsDraw == TRUE)
 		{
 			DrawTama(&tama[i]);
+		}
+		//当たり判定の描画
+		if (GAME_DEBUG == TRUE)
+		{
+			DrawBox(
+				tama[i].coll.left, tama[i].coll.top, tama[i].coll.right, tama[i].coll.bottom,
+				GetColor(255, 0, 0), FALSE);
 		}
 	}
 
@@ -795,11 +942,11 @@ VOID ChangeDraw(VOID)
 /// <param name="chara">当たり判定の領域</param>
 VOID CollUpdatePlayer(CHARACTOR* chara)
 {
-	chara->coll.left = chara->img.x;					//当たり判定を微調整
-	chara->coll.top = chara->img.y;						//当たり判定を微調整
+	chara->coll.left = chara->img.x + 10;					//当たり判定を微調整
+	chara->coll.top = chara->img.y + 10;						//当たり判定を微調整
 
-	chara->coll.right = chara->img.x + chara->img.width - 50;		//当たり判定を微調整
-	chara->coll.bottom = chara->img.y + chara->img.height - 50;	//当たり判定を微調整
+	chara->coll.right = chara->img.x + chara->img.width - 10;		//当たり判定を微調整
+	chara->coll.bottom = chara->img.y + chara->img.height - 10;	//当たり判定を微調整
 
 	return;
 }
