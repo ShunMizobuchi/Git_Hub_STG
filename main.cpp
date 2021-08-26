@@ -117,8 +117,7 @@ AUDIO TitleBGM;
 AUDIO PlayBGM;
 AUDIO EndBGM;
 
-//効果音
-AUDIO PlayerSE;
+
 
 //画面の切り替え
 BOOL IsFadeOut = FALSE;		//フェードアウト
@@ -423,6 +422,19 @@ BOOL GameLoad(VOID)
 	back[1].IsDraw = TRUE;		//描画する
 
 
+	
+
+	//PushEnterの位置を決める
+	TitleEnter.x = GAME_WIDTH / 2 - player.img.width - 150;
+	TitleEnter.y = GAME_HEIGHT - TitleEnter.height -200;
+
+	//PushEnterの点滅
+	PushEnterCnt = 0;
+	//PushEnterCntMAX = 60;	//初期化しなくて良い？
+	PushEnterBrink = FALSE;
+
+	
+
 		//敵の画像を読み込み
 	for (int i = 0; i < TEKI_KIND; i++)
 	{
@@ -436,9 +448,9 @@ BOOL GameLoad(VOID)
 
 	
 	//ロゴを読み込む
-	if (!LoadImageMem(&TitleLogo, ".\\Image\\タイトルロゴ.jpg")) { return FALSE; }
+	if (!LoadImageMem(&TitleLogo, ".\\Image\\タイトルロゴ.png")) { return FALSE; }
 	if (!LoadImageMem(&TitleEnter, ".\\Image\\PushEnter.jpg")) { return FALSE; }
-	if (!LoadImageMem(&EndClear, ".\\Image\\Clear.\jpg")) { return FALSE; }
+	if (!LoadImageMem(&EndClear, ".\\Image\\Clear.\png")) { return FALSE; }
 
 
 	//音楽を読み込む
@@ -447,7 +459,7 @@ BOOL GameLoad(VOID)
 	if (!LoadAudio(&EndBGM, ".\\Audio\\end_bgm.mp3", 255, DX_PLAYTYPE_LOOP)) { return FALSE; }
 
 
-	if (!LoadAudio(&PlayerSE, ".\\Audio\\パッ.mp3", 255, DX_PLAYTYPE_BACK)) { return FALSE; }
+
 
 	return TRUE;	//全て読み込めた！
 
@@ -679,6 +691,15 @@ VOID TitleProc(VOID)
 		return;
 	}
 
+	//BGMが流れていないとき
+	if (CheckSoundMem(TitleBGM.handle) == 0)
+	{
+
+		//BGMを流す
+		PlaySoundMem(TitleBGM.handle, TitleBGM.playType);
+
+	}
+
 	return;
 }
 
@@ -785,6 +806,14 @@ VOID PlayProc(VOID)
 		SetMouseDispFlag(TRUE);
 
 		return;
+	}
+
+	//BGMが流れていないとき
+	if (CheckSoundMem(PlayBGM.handle) == 0)
+	{
+		//BGMを流す
+		PlaySoundMem(PlayBGM.handle, PlayBGM.playType);
+
 	}
 
 	/*
@@ -1112,6 +1141,19 @@ VOID PlayDraw(VOID)
 				tama[i].coll.left, tama[i].coll.top, tama[i].coll.right, tama[i].coll.bottom,
 				GetColor(255, 0, 0), FALSE);
 		}
+	}
+
+	//プレイヤーがゴールに当たったときは
+	if (KeyClick(KEY_INPUT_RETURN) == TRUE)
+	{
+		//BGMを止める
+		StopSoundMem(PlayBGM.handle);
+
+		//エンド画面に切り替え
+		ChangeScene(GAME_SCENE_END);
+
+		//処理を強制終了
+		return;
 	}
 
 	//スコアの描画
